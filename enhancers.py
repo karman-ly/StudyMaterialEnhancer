@@ -1,14 +1,13 @@
 import base64
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
-from openai import OpenAI
+
+import openai
+from loguru import logger
 
 import config
-
-
-def get_client() -> OpenAI:
-    return OpenAI()
 
 
 @dataclass
@@ -33,35 +32,47 @@ class TextData:
         return {"type": "text", "text": self.text}
 
 
-def explain_image(data: ImageData) -> str:
-    response = get_client().chat.completions.create(
+def explain_image_call(data: ImageData, instructions: TextData) -> str:
+    response = openai.chat.completions.create(
+        seed=config.SEED,
         model="gpt-4-vision-preview",
         messages=[
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "What's in this image?"},
-                    data.as_dict()
+                    instructions.as_dict(),
+                    data.as_dict(),
                 ],
             }
         ],
-        max_tokens=300,
+        max_tokens=config.MAX_TOKENS,
     )
-    print(response)
 
     return response.choices[0].message.content
 
 
-def text_to_speech(text: str, output_file):
-    response = get_client().audio.speech.create(
-        model="tts-1",
-        voice=config.VOICE,
-        input=text
-    )
-    response.stream_to_file(output_file)
+def text_to_speech_call(text: str, filename: str):
+    response = openai.audio.speech.create(model="tts-1", voice=config.VOICE, input=text)
+    response.stream_to_file(config.AUDIO_OUTPUT_DIR / filename)
 
 
-def enhance(images: list[ImageData]) -> list[str]:
-    text = explain_image(images[0])
-    text_to_speech(text, config.OUTPUT_DIR / "audio" / "0.mp3")
-    return [text]
+def explain_image(image: ImageData, instructions: TextData, i: int) -> str:
+    if os.path.exists(config.TEXT_OUTPUT_DIR / f"{i}.md") and not config.REGENERATE:
+        logger.info(f"Slide {i}: Found saved text explanation, reusing...")
+        with open(config.TEXT_OUTPUT_DIR / f"{i}.md", encoding="utf-8") as f:
+            text = f.read()
+    else:
+        logger.info(f"Slide {i}: 🤖 Explaining...")
+        text = explain_image_call(image, instructions)
+        with open(config.TEXT_OUTPUT_DIR / f"{i}.md", "w", encoding="utf-8") as f:
+            f.write(text)
+
+    return text
+
+
+def text_to_speech(text: str, i: int):
+    if os.path.exists(config.AUDIO_OUTPUT_DIR / f"{i}.mp3") and not config.REGENERATE:
+        logger.info(f"Slide {i}: Found saved audio explanation, reusing...")
+    else:
+        logger.info(f"Slide {i}: 🤖 Reading...")
+        text_to_speech_call(text, f"{i}.mp3")
