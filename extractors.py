@@ -26,7 +26,7 @@ def pdf_to_images() -> list[ImageData]:
     doc = fitz.open(config.INPUT_FILE)
 
     res = []
-    for i, page in enumerate(iter(doc)):
+    for i, page in enumerate(iter(doc), start=1):
         output_path = config.IMAGES_OUTPUT_DIR / f"{i}.jpg"
         if not output_path.exists():
             pix = page.get_pixmap()
