@@ -1,10 +1,10 @@
 import config
 
 
-def to_obsidian_md(data: list[str]):
+def to_obsidian_md(data_enumerated: list[(int, str)]):
     res = []
 
-    for i, text in enumerate(data):
+    for i, text in data_enumerated:
         slide_text = [
             f"# Slide {i}",
             f"![[{i}.jpg]]",

@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from loguru import logger
 
+import config
 import enhancers
 import extractors
 import presentations
@@ -18,13 +19,16 @@ def main():
     instructions = extractors.read_instructions()
 
     data = []
-    for i, image in enumerate(images):
+    images_iter = list(enumerate(images, start=1))
+    if config.RANGE:
+        images_iter = images_iter[config.RANGE[0] - 1 : config.RANGE[1] - 1]
+    for i, image in images_iter:
         try:
             text = enhancers.explain_image(image, instructions, i)
             enhancers.text_to_speech(text, i)
-            data.append(text)
+            data.append((i, text))
         except Exception as e:
-            logger.error(f"❌ Error while processing slide {i}:\n\n{e}")
+            logger.error(f"❌ Error while processing slide {i}:\n{e}")
         else:
             logger.info(f"✅ Successfully processed slide {i}")
 

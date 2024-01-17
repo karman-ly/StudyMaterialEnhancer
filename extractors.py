@@ -27,11 +27,12 @@ def pdf_to_images() -> list[ImageData]:
 
     res = []
     for i, page in enumerate(iter(doc)):
-        pix = page.get_pixmap()
         output_path = config.IMAGES_OUTPUT_DIR / f"{i}.jpg"
-        if config.IMAGE_RESOLUTION is not None:
-            resize(output_path)
-        pix.save(output_path)
+        if not output_path.exists():
+            pix = page.get_pixmap()
+            if config.IMAGE_RESOLUTION is not None:
+                resize(output_path)
+            pix.save(output_path)
         res.append(ImageData.from_file(output_path))
 
     return res
