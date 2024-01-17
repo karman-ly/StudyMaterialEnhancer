@@ -56,22 +56,26 @@ def text_to_speech_call(text: str, filename: str):
     response.stream_to_file(config.AUDIO_OUTPUT_DIR / filename)
 
 
-def explain_image(image: ImageData, instructions: TextData, i: int) -> str:
+def explain_image(image: ImageData, instructions: TextData, i: int) -> (str, bool):
     if os.path.exists(config.TEXT_OUTPUT_DIR / f"{i}.md") and not config.REGENERATE:
         logger.info(f"Slide {i}: Found saved text explanation, reusing...")
         with open(config.TEXT_OUTPUT_DIR / f"{i}.md", encoding="utf-8") as f:
-            text = f.read()
+            return f.read(), False
     else:
         logger.info(f"Slide {i}: 🤖 Explaining...")
         text = explain_image_call(image, instructions)
         with open(config.TEXT_OUTPUT_DIR / f"{i}.md", "w", encoding="utf-8") as f:
             f.write(text)
 
-    return text
+        return text, True
 
 
-def text_to_speech(text: str, i: int):
-    if os.path.exists(config.AUDIO_OUTPUT_DIR / f"{i}.mp3") and not config.REGENERATE:
+def text_to_speech(text: str, i: int, text_regenerated: bool = False):
+    if (
+        os.path.exists(config.AUDIO_OUTPUT_DIR / f"{i}.mp3")
+        and not config.REGENERATE
+        and not text_regenerated
+    ):
         logger.info(f"Slide {i}: Found saved audio explanation, reusing...")
     else:
         logger.info(f"Slide {i}: 🤖 Reading...")

@@ -23,9 +23,12 @@ def main():
     if config.RANGE:
         images_iter = images_iter[config.RANGE[0] - 1 : config.RANGE[1] - 1]
     for i, image in images_iter:
+        if i in config.EXCLUDE_SLIDES:
+            logger.info(f"Slide {i}: Excluded")
+            continue
         try:
-            text = enhancers.explain_image(image, instructions, i)
-            enhancers.text_to_speech(text, i)
+            text, text_regenerated = enhancers.explain_image(image, instructions, i)
+            enhancers.text_to_speech(text, i, text_regenerated)
             data.append((i, text))
         except Exception as e:
             logger.error(f"❌ Error while processing slide {i}:\n{e}")
