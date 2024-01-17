@@ -7,9 +7,9 @@ def to_obsidian_md(data_enumerated: list[(int, str)]):
     for i, text in data_enumerated:
         slide_text = [
             f"# Slide {i}",
+            f"```audio-player\n[[{i}.mp3]]\n```",
             f"![[{i}.jpg]]",
             text,
-            f"```audio-player\n[[{i}.mp3]]\n```",
         ]
 
         res.append("\n\n".join(slide_text))
